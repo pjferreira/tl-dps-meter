@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thronometer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="main-wrapper">
+    <!-- Header Title -->
+    <h1 style="margin-top:40px; color:#4caf50; text-align:center;">Damage Thronometer</h1>
+    <!-- File Upload Section -->
+    <div id="dropArea" class="drop-area" style="max-width: 600px; width: 100%; margin-top: 40px;">
+      <p>Drag & drop your log file here, or <label for="logFileInput"
+          style="color:#4caf50;cursor:pointer;">browse</label></p>
+      <input type="file" id="logFileInput" accept=".txt" multiple style="display:none;" />
+    </div>
+    <div id="fileInfoSection"
+      style="width: 100%; max-width: 1200px; margin-bottom: 20px; display: none; background-color: #2e2e3e; padding: 20px; border-radius: 8px;">
+      <!-- File info and list will be populated here -->
+    </div>
+    <div id="targetTabs" class="tabs-header"
+      style="width: 100%; max-width: 1200px; padding: 0 20px; box-sizing: border-box; display: none;"></div>
+    <div id="dpsGraphSection"
+      style="width: 100%; max-width: 1200px; margin-bottom: 20px; display: none; background-color: #2e2e3e; padding: 20px; border-radius: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #4caf50;">DPS Over Time (Active Target)</h3>
+        <button id="resetGraphFilterBtn" onclick="resetGraphFilter()"
+          style="display: none; background: #e57373; border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          Reset Filter
+        </button>
+      </div>
+      <div style="position: relative; height: 300px; width: 100%;">
+        <canvas id="dpsGraphCanvas"></canvas>
+      </div>
+      <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+        <div>
+          <label for="dpsIntervalSelect" style="color: #ccc; font-size: 14px; margin-right: 5px;">Time Interval:</label>
+          <select id="dpsIntervalSelect"
+            style="background: #1e1e2e; color: #fff; border: 1px solid #555; padding: 4px; border-radius: 4px;">
+            <option value="1">1s</option>
+            <option value="5" selected>5s</option>
+            <option value="10">10s</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: center;">
+          <input type="checkbox" id="normalizeTimeChk" style="margin-right: 5px; cursor: pointer;">
+          <label for="normalizeTimeChk"
+            style="color: #ccc; font-size: 14px; cursor: pointer; margin-right: 5px;">Normalize time</label>
+          <span
+            title="Aligning every player's first hit to 0 seconds. This forces all graphs to start at the same point"
+            style="cursor: help; color: #aaa; border: 1px solid #555; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; justify-content: center; align-items: center; font-size: 12px;">?</span>
+        </div>
+      </div>
+    </div>
+    <div id="sourceSelectWrapper"
+      style="width: 100%; max-width: 1200px; padding: 10px 20px; box-sizing: border-box; display: none;">
+      <div class="source-select-container">
+        <label for="sourceSelect">Source:</label>
+        <select id="sourceSelect">
+          <option value="all">All Sources</option>
+        </select>
+      </div>
+    </div>
+    <div class="container" style="justify-content: center; width: 100%; max-width: 1200px;">
+      <!-- Table Section -->
+      <div class="table-container" id="tableContainer">
+        <table id="damageTable">
+          <thead>
+            <tr>
+              <th>Details</th>
+              <th onclick="changeSort('name')" id="header-name">Skill Name</th>
+              <th onclick="changeSort('damage')" id="header-damage" class="sort-desc">Damage</th>
+              <th onclick="changeSort('damage')">Ratio</th>
+              <th onclick="changeSort('hits')" id="header-hits">Hit Count</th>
+              <th onclick="changeSort('crit')" id="header-crit">Critical %</th>
+              <th onclick="changeSort('heavy')" id="header-heavy">Heavy %</th>
+              <th onclick="changeSort('critHeavy')" id="header-critHeavy">Critical+Heavy %</th>
+              <th>DPS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rows will be dynamically added here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Details Section -->
+      <div class="details-container" id="detailsContainer">
+        <div id="statsSection">
+          <!-- Stats details will be populated here -->
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <footer>
+      Created by Arkarus &copy; 2025
+    </footer>
+  </div>
+  <script src="main.js"></script>
+
+  <!-- Skill Details Modal -->
+  <div id="skillModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalSkillName">Skill Details</h2>
+        <div class="detail-view-controls">
+          <button class="view-btn active" id="btn-view-table" onclick="switchModalView('table')" title="Table View">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path
+                d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v3h16V5H4zm0 5v4h4v-4H4zm6 0v4h4v-4h-4zm6 0v4h4v-4h-4zm-12 6v4h4v-4H4zm6 0v4h4v-4h-4zm6 0v4h4v-4h-4z" />
+            </svg>
+          </button>
+          <button class="view-btn" id="btn-view-graph" onclick="switchModalView('graph')" title="Graph View">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M5 19h14v1H5v-1zm0-10h2v9H5V9zm4 4h2v5H9v-5zm4-8h2v13h-2V5zm4 5h2v8h-2v-8z" />
+            </svg>
+          </button>
+        </div>
+        <button class="close-modal" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalTableView">
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th onclick="changeModalSort('time')" id="modal-header-time" style="cursor:pointer;">Time</th>
+                <th onclick="changeModalSort('damage')" id="modal-header-damage" style="cursor:pointer;">Damage</th>
+                <th onclick="changeModalSort('type')" id="modal-header-type" style="cursor:pointer;">Type</th>
+              </tr>
+            </thead>
+            <tbody id="skillEventsTable">
+              <!-- Events populated here -->
+            </tbody>
+          </table>
+        </div>
+        <div id="modalGraphView" style="display:none;">
+          <div style="position: relative; height: 500px; width: 100%;">
+            <canvas id="skillGraphCanvas"></canvas>
+          </div>
+          <div id="graphLegend" class="graph-legend" style="margin-top: 10px;">
+            <!-- Legend items will be populated by JS or static -->
+            <div class="legend-item"><span class="legend-dot" style="background-color: #ffffff;"></span> Normal</div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #e79600;"></span> Critical</div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #cd84cf;"></span> Heavy</div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #ffd700;"></span> Crit+Heavy
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
